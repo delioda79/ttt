@@ -19,11 +19,12 @@ type Board interface {
 	AddNought(x, y int) error
 	AddCross(x, y int) error
 	GetStatus() map[int]map[int]uint8
+	LogStatus()
 	Run(ch chan []byte)
 	Reset()
 }
 
-// NoughtCross is a TicTacToe standard board gam e
+// NoughtCross is a TicTacToe standard board game
 type NoughtCross struct {
 	board  map[int]map[int]uint8
 	winner uint8
@@ -74,20 +75,19 @@ COLS:
 		var plyr uint8
 	ROWS:
 		for r := 0; r < len(nc.board); r++ {
-			if nc.board[c][r] == 0 {
+			if nc.board[r][c] == 0 {
 				continue COLS
 			}
-			if nc.board[c][r] != 0 && plyr == 0 {
-				plyr = nc.board[c][r]
+			if nc.board[r][c] != 0 && plyr == 0 {
+				plyr = nc.board[r][c]
 				continue ROWS
 			}
 
-			if plyr != nc.board[c][r] {
+			if plyr != nc.board[r][c] {
 				continue COLS
 			}
 		}
 		if plyr != 0 {
-			fmt.Println("Vert win", plyr, nc.board)
 			return true, plyr
 		}
 	}
@@ -98,7 +98,7 @@ func (nc *NoughtCross) checkDiag() (bool, uint8) {
 	var plyr uint8
 	for r := 0; r < len(nc.board); r++ {
 		if nc.board[r][r] == 0 {
-			return false, 0
+			break
 		}
 		if nc.board[r][r] != 0 && plyr == 0 {
 			plyr = nc.board[r][r]
@@ -106,7 +106,7 @@ func (nc *NoughtCross) checkDiag() (bool, uint8) {
 		}
 
 		if plyr != nc.board[r][r] {
-			return false, 0
+			break
 		}
 	}
 
@@ -115,15 +115,15 @@ func (nc *NoughtCross) checkDiag() (bool, uint8) {
 	}
 
 	for r := 0; r < len(nc.board); r++ {
-		if nc.board[r][len(nc.board)-r] == 0 {
+		if nc.board[r][len(nc.board)-r-1] == 0 {
 			return false, 0
 		}
-		if nc.board[r][len(nc.board)-r] != 0 && plyr == 0 {
+		if nc.board[r][len(nc.board)-r-1] != 0 && plyr == 0 {
 			plyr = nc.board[r][r]
 			continue
 		}
 
-		if plyr != nc.board[r][len(nc.board)-r] {
+		if plyr != nc.board[r][len(nc.board)-r-1] {
 			return false, 0
 		}
 	}
@@ -155,7 +155,7 @@ func (nc *NoughtCross) AddNought(r, c int) error {
 	if nc.player == Cross {
 		return errors.New("Not your turn")
 	}
-	if r < len(nc.board) && c < len(nc.board) {
+	if r >= 0 && r < len(nc.board) && c >= 0 && c < len(nc.board) {
 		if nc.board[r][c] == 0 {
 			nc.board[r][c] = Nought
 			log.Printf("Added %d %d %d and map is\n", r, c, nc.board[r][c])
@@ -170,7 +170,15 @@ func (nc *NoughtCross) AddNought(r, c int) error {
 		log.Println("the ", r, c, " is ", nc.board[r][c])
 	}
 
-	msg := fmt.Sprintf("Position not allowed %v %v %v %v %v %v", r, c, len(nc.board), r < len(nc.board), c < len(nc.board), r < len(nc.board) && c < len(nc.board))
+	msg := fmt.Sprintf(
+		"Position not allowed %v %v %v %v %v %v %v %v",
+		r, c, len(nc.board),
+		r < len(nc.board),
+		c < len(nc.board),
+		r < len(nc.board) && c < len(nc.board),
+		r >= 0,
+		c >= 0,
+	)
 	return errors.New(msg)
 }
 
